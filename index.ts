@@ -1,35 +1,28 @@
-const server = Deno.listen({ port: 3000 });
+import { serve } from "https://deno.land/std@0.139.0/http/server.ts";
 
-for await (const conn: Deno.Conn of server) {
-    const ip = (conn.remoteAddr as { hostname: string }).hostname!;
-    await handleConnection(conn, ip);
-}
+const port = 3000;
 
-async function handleConnection(conn: Deno.Conn, ip: string) {
-    const httpConn = Deno.serveHttp(conn);
-    for await (const requestEvent of httpConn) {
-        const url = new URL(requestEvent.request.url);
-        await handleURL(requestEvent, url, ip);
-    }
-}
-
-async function handleURL(requestEvent: Deno.RequestEvent, url: URL, ip: string) {
-    if (url.pathname == '/') url.pathname = '/index.html';
-    const filePath = `./generatePI${url.pathname}`;
+const handler = async (req: Request): Promise<Response> => {
+    let { pathname } = new URL(req.url)
     try {
-        requestEvent.respondWith(
-            new Response(await Deno.readFile(filePath), {
+        if (pathname == "/") {
+            pathname = "/index.html";
+        }
+        const filePath = `./generatePI${pathname}`;
+        try {
+            return new Response(await Deno.readFile(filePath), {
                 status: 200,
-                headers: {
-                }
-            })
-        )
-    } catch(e) {
-        requestEvent.respondWith(
-            new Response(String(e), {
+            });
+        } catch(e) {
+            return new Response(String(e), {
                 status: 404,
             })
-        ).catch(console.log)
+        } 
+    } catch(e) {
+        return new Response(`Unable to get ${pathname}\nThis is on our end, sorry!\n${String(e)}`, {
+            status: 500,
+        });
     }
-    console.log(`REQUEST HANDLED: ${url.pathname} served to ${ip}`);
-}
+};
+
+await serve(handler, { port });
