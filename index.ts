@@ -33,9 +33,3 @@ async function handleURL(requestEvent: Deno.RequestEvent, url: URL, ip: string) 
     }
     console.log(`REQUEST HANDLED: ${url.pathname} served to ${ip}`);
 }
-
-//create a function which will get the content type from a path
-async function getContentTypeFromFile(path: string) {
-    const contentType = await Deno.stat(path);
-    return contentType.isFile ? 'text/html' : 'text/plain';
-}
